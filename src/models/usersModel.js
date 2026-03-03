@@ -1,11 +1,15 @@
 const mongoose = require("mongoose");
-const bycrypt = require("bcrypt");
+const bcrypt = require("bcrypt");
 const validator = require("validator");
 
 // User Schema for basic login/registration
 const userSchema = new mongoose.Schema({
     name: {
         type: String, 
+        required: true,
+    },
+    surname: {
+        type: String,
         required: true,
     },
     email: {
@@ -41,8 +45,8 @@ userSchema.pre("save", async function (next){
         return next();
     }
 
-    const salt = await bycrypt.genSalt(10);
-    const hash = await bycrypt.hash(this.password, salt);
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(this.password, salt);
     this.password = hash
 
     next()
@@ -51,7 +55,7 @@ userSchema.pre("save", async function (next){
 
 //Match passwords
 userSchema.methods.matchPassword = async function(password){
-    return await bycrypt.compare(password, this.password);
+    return await bcrypt.compare(password, this.password);
 }
 // userSchema.methods.matchPassword = async function (enteredPassword) {
 //   return enteredPassword === this.password;

@@ -1,4 +1,4 @@
-const User = require("../models/usersModel");
+const User = require("../../../models/usersModel");
 const jwt = require("jsonwebtoken");
 
 //create token
@@ -21,23 +21,30 @@ const createToken = async (user) => {
 // Signup User
 const signupUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, surname, email, password } = req.body;
 
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    const user = await User.create({ name, email, password });
+    const user = await User.create({ name, surname, email, password });
     const { token, refreshToken } = await createToken(user); //destructure tokens from createToken
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: false, // true in production
+      sameSite: "lax",
+      maxAge: 3 * 60 * 1000, // 3 minutes (your refresh expiry)
+    });
 
     res.status(201).json({
       message: "User created successfully",
       _id: user._id,
       name: user.name,
+      surname: user.surname,
       email: user.email,
       token,
-      refreshToken,
     });
   } catch (error) {
     console.log(error);
@@ -56,21 +63,28 @@ const loginUser = async (req, res) => {
     }
 
     const { token, refreshToken } = await createToken(user); //destructure tokens from createToken
+    console.timeEnd("LOGIN_TIME");
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: false, // true in production
+      sameSite: "lax",
+      maxAge: 3 * 60 * 1000, // 3 minutes (your refresh expiry)
+    });
 
     res.status(200).json({
       message: "User logged in successfully",
       _id: user._id,
       name: user.name,
+      surname: user.surname,
       email: user.email,
       token,
-      refreshToken
     });
+    console.time("LOGIN_TIME");
   } catch (error) {
     console.log(error);
     res.status(500).json({ message: "Something went wrong" });
   }
 };
-
 
 //refresh token
 const HandleRefreshToken = async (req, res) => {
@@ -94,13 +108,14 @@ const HandleRefreshToken = async (req, res) => {
     const token = jwt.sign(
       { _id: user._id, role: user.role },
       process.env.SECRET,
-      { expiresIn: "2m" }
+      { expiresIn: "1m" },
     );
 
     res.status(200).json({
       message: "Token refreshed successfully",
       _id: user._id,
-      name: user.name,
+      name: user.name,      
+      surname: user.surname,      
       email: user.email,
       role: user.role,
       token, // new access token
@@ -114,19 +129,19 @@ const HandleRefreshToken = async (req, res) => {
 
 //logout
 const logoutUser = async (req, res) => {
-  try{
-    const userId = req.user._id
-    if(!userId){
+  try {
+    const userId = req.user._id;
+    if (!userId) {
       return res.status(401).json({ message: "User not found" });
     }
 
-    await User.updateOne({_id: userId}, { refreshToken: null});
+    await User.updateOne({ _id: userId }, { refreshToken: null });
 
-    res.clearCookie("token", {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-    });
+    // res.clearCookie("token", {
+    //   httpOnly: true,
+    //   secure: true,
+    //   sameSite: "strict",
+    // });
     res.clearCookie("refreshToken", {
       httpOnly: true,
       secure: true,
@@ -134,10 +149,11 @@ const logoutUser = async (req, res) => {
     });
 
     res.status(200).json({ message: "User logged out successfully" });
-  }catch(error){
-    res.status(500).json({ message: "Error during logout", error: error.message });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error during logout", error: error.message });
   }
 };
-
 
 module.exports = { signupUser, loginUser, HandleRefreshToken, logoutUser };
