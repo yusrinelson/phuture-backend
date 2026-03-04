@@ -2,15 +2,21 @@ require("dotenv").config();
 const express = require("express");
 const connectDB = require("./src/config/db");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
+
 
 // route files
 const authRoutes = require("./src/features/auth/routes/authRoutes");
 
 const app = express();
+
+// middlewares
 app.use(cors({ 
   origin: "http://localhost:5173", //for frontend url
   credentials: true // if you using cookies
 }));
+
+app.use(cookieParser()); // parse cookies
 
 // middlewarre to parse json bodies
 app.use(express.json());
