@@ -4,7 +4,7 @@ const { loginUser, signupUser, HandleRefreshToken, logoutUser, serverHealth} = r
 
 const {protect} = require("../../../middlewares/authorise")
 
-router.post("/", serverHealth)
+router.get("/", serverHealth)
 router.post("/login", loginUser);
 router.post("/signup", signupUser);
 router.post("/refresh", HandleRefreshToken);

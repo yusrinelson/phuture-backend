@@ -10,6 +10,7 @@ const authRoutes = require("./src/features/auth/routes/authRoutes");
 
 const app = express();
 
+
 // middlewares
 app.use(cors({ 
   origin: process.env.CLIENT_URL, //for frontend url
