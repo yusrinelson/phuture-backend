@@ -1,16 +1,21 @@
 const User = require("../../../models/usersModel");
 const jwt = require("jsonwebtoken");
 
+//server health
+const serverHealth = (req, res) => {
+  res.send("API is running...");
+};
+
 //create token
 const createToken = async (user) => {
   const payload = {
     _id: user._id,
     role: user.role,
   };
-  const token = jwt.sign(payload, process.env.SECRET, { expiresIn: "1m" });
+  const token = jwt.sign(payload, process.env.SECRET, { expiresIn: "30m" });
 
   const refreshToken = jwt.sign(payload, process.env.REFRESH_SECRET, {
-    expiresIn: "3m",
+    expiresIn: "50m",
   });
 
   await User.updateOne({ _id: user._id }, { refreshToken });
@@ -31,11 +36,12 @@ const signupUser = async (req, res) => {
     const user = await User.create({ name, surname, email, password });
     const { token, refreshToken } = await createToken(user); //destructure tokens from createToken
 
+     const isProduction = process.env.NODE_ENV === "production";
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: false, // true in production
-      sameSite: "lax",
-      maxAge: 3 * 60 * 1000, // 3 minutes (your refresh expiry)
+      secure: isProduction, // true in production
+      sameSite: isProduction ? "none" : "lax",
+      maxAge: 50 * 60 * 1000, // 50 minutes (your refresh expiry)
     });
 
     res.status(201).json({
@@ -54,6 +60,7 @@ const signupUser = async (req, res) => {
 
 // Login User
 const loginUser = async (req, res) => {
+  console.timeEnd("LOGIN_TIME");
   try {
     const { email, password } = req.body;
 
@@ -63,12 +70,13 @@ const loginUser = async (req, res) => {
     }
 
     const { token, refreshToken } = await createToken(user); //destructure tokens from createToken
-    console.timeEnd("LOGIN_TIME");
+
+    const isProduction = process.env.NODE_ENV === "production";
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: false, // true in production
-      sameSite: "lax",
-      maxAge: 3 * 60 * 1000, // 3 minutes (your refresh expiry)
+      secure: isProduction, // true in production
+      sameSite:  isProduction ? "none" : "lax",
+      maxAge: 50 * 60 * 1000, // 50 minutes (your refresh expiry)
     });
 
     res.status(200).json({
@@ -108,7 +116,7 @@ const HandleRefreshToken = async (req, res) => {
     const token = jwt.sign(
       { _id: user._id, role: user.role },
       process.env.SECRET,
-      { expiresIn: "1m" },
+      { expiresIn: "30m" },
     );
 
     res.status(200).json({
@@ -156,4 +164,4 @@ const logoutUser = async (req, res) => {
   }
 };
 
-module.exports = { signupUser, loginUser, HandleRefreshToken, logoutUser };
+module.exports = { signupUser, loginUser, HandleRefreshToken, logoutUser, serverHealth };

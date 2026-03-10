@@ -25,6 +25,9 @@ app.use(express.urlencoded({ extended: true }));
 //routes
 app.use("/api/auth", authRoutes);
 
+//health route for server
+app.use("/", authRoutes);
+
 const startServer = async () => {
   await connectDB();
   const PORT = process.env.PORT || 5000;
