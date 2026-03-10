@@ -70,7 +70,7 @@ const loginUser = async (req, res) => {
     
     const { token, refreshToken } = await createToken(user); //destructure tokens from createToken
     
-    console.timeEnd("LOGIN_TIME");
+    // console.timeEnd("LOGIN_TIME");
     const isProduction = process.env.NODE_ENV === "production";
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
@@ -150,10 +150,11 @@ const logoutUser = async (req, res) => {
     //   secure: true,
     //   sameSite: "strict",
     // });
+    const isProduction = process.env.NODE_ENV === "production";
     res.clearCookie("refreshToken", {
       httpOnly: true,
-      secure: true,
-      sameSite: "strict",
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "strict",
     });
 
     res.status(200).json({ message: "User logged out successfully" });

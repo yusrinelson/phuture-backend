@@ -10,11 +10,16 @@ const authRoutes = require("./src/features/auth/routes/authRoutes");
 
 const app = express();
 
-
-// middlewares
-app.use(cors({ 
-  origin: process.env.CLIENT_URL, //for frontend url
-  credentials: true // if you using cookies
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "https://phuture-frontend.vercel.app"
+];
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) callback(null, true);
+    else callback(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
 }));
 
 app.use(cookieParser()); // parse cookies
@@ -25,9 +30,6 @@ app.use(express.urlencoded({ extended: true }));
 
 //routes
 app.use("/api/auth", authRoutes);
-
-//health route for server
-app.use("/", authRoutes);
 
 const startServer = async () => {
   await connectDB();
