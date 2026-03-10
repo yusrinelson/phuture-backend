@@ -60,17 +60,17 @@ const signupUser = async (req, res) => {
 
 // Login User
 const loginUser = async (req, res) => {
-  console.timeEnd("LOGIN_TIME");
   try {
     const { email, password } = req.body;
-
+    
     const user = await User.findOne({ email });
     if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
-
+    
     const { token, refreshToken } = await createToken(user); //destructure tokens from createToken
-
+    
+    console.timeEnd("LOGIN_TIME");
     const isProduction = process.env.NODE_ENV === "production";
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
